@@ -1,4 +1,13 @@
 services:
+  redis:
+    image: 'redis:6.0.12-alpine'
+    ports:
+      - '6379:6379'
+    links:
+      - api
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+
   api:
     build:
       dockerfile: Dockerfile
@@ -10,6 +19,6 @@ services:
     env_file:
       - .env
     # Run a command against the development stage of the image
-    command: npm run start:dev
+    command: npm run start:prod
     ports:
-      - 3000:3000
+      - 4000:4000

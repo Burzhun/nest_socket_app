@@ -1,0 +1,97 @@
+stages:
+  - lint
+  #  - build
+  - build-docker
+  - build-docker-latest
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - node_modules/
+
+lint-package:
+  image: node:18.15.0-alpine
+  stage: lint
+  script:
+    - npm ci --cache .npm --prefer-offline
+    - npm run lint
+  tags:
+    - docker
+
+#build-stage-default:
+#  image: node:16.16.0
+#  stage: build
+#  script:
+#    - npm ci --cache .npm --prefer-offline
+#    - npm run build
+#  artifacts:
+#    expire_in: 1 day
+#    paths:
+#      - build/
+#  except:
+#    - master
+#  tags:
+#    - docker
+#
+#build-stage-master:
+#  stage: build
+#  script:
+#    - npm ci --cache .npm --prefer-offline
+#    - npm run build
+#  artifacts:
+#    expire_in: 1 mos
+#    paths:
+#      - build/
+#  only:
+#    - master
+#  tags:
+#    - docker
+
+build-docker-master:
+  stage: build-docker
+  variables:
+    IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+  #  dependencies:
+  #    - build-stage-master
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $IMAGE_TAG .
+    - docker push $IMAGE_TAG
+    - docker rmi $IMAGE_TAG
+  only:
+    - master
+  tags:
+    - linux
+
+build-docker-default:
+  stage: build-docker
+  variables:
+    IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+  #  dependencies:
+  #    - build-stage-default
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $IMAGE_TAG .
+    - docker push $IMAGE_TAG
+    - docker rmi $IMAGE_TAG
+  except:
+    - master
+  tags:
+    - linux
+
+build-docker-latest:
+  stage: build-docker-latest
+  variables:
+    IMAGE_TAG: $CI_REGISTRY_IMAGE:latest
+  #  dependencies:
+  #    - build-stage-master
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $IMAGE_TAG .
+    - docker push $IMAGE_TAG
+    - docker rmi $IMAGE_TAG
+  only:
+    - master
+  when: manual
+  tags:
+    - linux
